@@ -12,6 +12,7 @@ import AllScreen from "../screens/AllScreen";
 import AddBorrowingScreen from "../screens/AddBorrowingScreen";
 import { RootStackParamList } from "./types";
 import ArchiveScreen from "../screens/ArchiveScreen";
+import InventoryScreen from "../screens/InventoryScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -41,8 +42,8 @@ function Tabs() {
             iconName = "arrow-down-circle-outline";
           } else if (route.name === "Archive") {
             iconName = "archive-outline";
-          } else {
-            iconName = "ellipse-outline"; // fallback
+          } else if (route.name === "Inventory") {
+            iconName = "cube-outline";
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -54,6 +55,7 @@ function Tabs() {
       <Tab.Screen name="All" component={AllScreen} />
       <Tab.Screen name="Lent" component={LentScreen} />
       <Tab.Screen name="Borrowed" component={BorrowedScreen} />
+      <Tab.Screen name="Inventory" component={InventoryScreen} />
       <Tab.Screen
         name="Archive"
         component={ArchiveScreen}
