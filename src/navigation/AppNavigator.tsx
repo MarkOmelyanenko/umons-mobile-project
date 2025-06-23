@@ -1,10 +1,10 @@
-import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
 import { Text } from "react-native";
 import { supabase } from "../supabase";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
 
 import LentScreen from "../screens/LentScreen";
 import BorrowedScreen from "../screens/BorrowedScreen";
@@ -13,11 +13,35 @@ import AddBorrowingScreen from "../screens/AddBorrowingScreen";
 import { RootStackParamList } from "./types";
 import ArchiveScreen from "../screens/ArchiveScreen";
 import InventoryScreen from "../screens/InventoryScreen";
+import AdminScreen from "../screens/AdminScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function Tabs() {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+
+      if (!error && data?.is_admin) {
+        setIsAdmin(true);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
   return (
     <Tab.Navigator
       screenOptions={({ route, navigation }) => ({
@@ -44,6 +68,10 @@ function Tabs() {
             iconName = "archive-outline";
           } else if (route.name === "Inventory") {
             iconName = "cube-outline";
+          } else if (route.name === "Admin") {
+            iconName = "settings-outline";
+          } else {
+            iconName = "ellipse";
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -66,6 +94,7 @@ function Tabs() {
           ),
         }}
       />
+      {isAdmin && <Tab.Screen name="Admin" component={AdminScreen} />}
     </Tab.Navigator>
   );
 }
