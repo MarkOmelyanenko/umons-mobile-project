@@ -7,6 +7,7 @@ type Borrowing = {
   from_user: string;
   to_user: string;
   item_name: string;
+  quantity: number;
   date_given: string;
   date_due?: string | null;
   returned: boolean;
@@ -41,6 +42,9 @@ export default function BorrowingCard({
       </Text>
       <Text style={styles.text}>
         Item: <Text style={styles.bold}>{borrowing.item_name}</Text>
+      </Text>
+      <Text style={styles.text}>
+        Quantity: <Text style={styles.bold}>{borrowing.quantity}</Text>
       </Text>
       <Text style={styles.text}>Given: {borrowing.date_given}</Text>
       {borrowing.date_due && (

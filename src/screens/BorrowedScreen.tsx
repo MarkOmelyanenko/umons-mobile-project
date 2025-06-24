@@ -15,6 +15,7 @@ type Borrowing = {
   id: number;
   from_user: string;
   item_name: string;
+  quantity: number;
   date_given: string;
   date_due: string;
 };
@@ -31,7 +32,7 @@ export default function BorrowedScreen() {
 
     const { data, error } = await supabase
       .from("borrowings")
-      .select("id, from_user, item_name, date_given, date_due")
+      .select("id, from_user, item_name, quantity, date_given, date_due")
       .eq("to_user", user?.email)
       .eq("returned", false)
       .order("date_given", { ascending: false });
@@ -86,7 +87,8 @@ export default function BorrowedScreen() {
         <View style={styles.card}>
           <Text style={styles.text}>
             You borrowed <Text style={styles.bold}>{item.item_name}</Text> from{" "}
-            <Text style={styles.bold}>{item.from_user}</Text> on{" "}
+            <Text style={styles.bold}>{item.from_user}</Text> in the quantity of{" "}
+            <Text style={styles.bold}>{item.quantity}</Text> on{" "}
             {item.date_given} due {item.date_due}
           </Text>
         </View>

@@ -19,6 +19,7 @@ export default function AddBorrowingScreen() {
   const [itemName, setItemName] = useState("");
   const [dateGiven, setDateGiven] = useState("");
   const [dateDue, setDateDue] = useState("");
+  const [quantity, setQuantity] = useState("1");
 
   const [inventory, setInventory] = useState<string[]>([]);
   const [loadingInventory, setLoadingInventory] = useState(true);
@@ -55,8 +56,14 @@ export default function AddBorrowingScreen() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!toUser || !itemName || !dateGiven) {
+    if (!toUser || !itemName || !dateGiven || !quantity) {
       Alert.alert("Missing fields", "Please fill in all required fields");
+      return;
+    }
+
+    const quantityValue = parseInt(quantity);
+    if (isNaN(quantityValue) || quantityValue <= 0) {
+      Alert.alert("Invalid quantity", "Quantity must be a positive number");
       return;
     }
 
@@ -69,6 +76,32 @@ export default function AddBorrowingScreen() {
       return;
     }
 
+    if (!user) {
+      Alert.alert("Error", "User not found");
+      return;
+    }
+
+    const { data: items, error: fetchError } = await supabase
+      .from("inventory")
+      .select("id, quantity")
+      .eq("owner_email", user.email)
+      .eq("item_name", itemName)
+      .limit(1)
+      .single();
+
+    if (fetchError || !items) {
+      Alert.alert("Error", fetchError?.message || "Item not found");
+      return;
+    }
+
+    if (items.quantity < quantityValue) {
+      Alert.alert(
+        "Not enough quantity",
+        `Only ${items.quantity} item(s) available`
+      );
+      return;
+    }
+
     const { error } = await supabase.from("borrowings").insert([
       {
         from_user: user?.email,
@@ -77,22 +110,30 @@ export default function AddBorrowingScreen() {
         date_given: dateGiven,
         date_due: dateDue || null,
         returned: false,
+        quantity: quantityValue,
       },
     ]);
 
     if (error) {
       Alert.alert("Error", error.message);
-    } else {
-      if (user && user.email) {
-        const { error: updateError } = await supabase
-          .from("inventory")
-          .update({ available: false })
-          .eq("owner_email", user.email)
-          .eq("item_name", itemName);
-      }
-      Alert.alert("Success", "Borrowing added!");
-      navigation.goBack();
+      return;
     }
+
+    const newQuantity = items.quantity - quantityValue;
+    const { error: updateError } = await supabase
+      .from("inventory")
+      .update({
+        quantity: newQuantity,
+        available: newQuantity > 0,
+      })
+      .eq("id", items.id);
+
+    if (updateError) {
+      Alert.alert("Warning", "Borrowing added, but inventory update failed.");
+    }
+
+    Alert.alert("Success", "Borrowing added!");
+    navigation.goBack();
   };
 
   return (
@@ -116,6 +157,14 @@ export default function AddBorrowingScreen() {
           </Picker>
         </View>
       )}
+
+      <Text style={styles.label}>Quantity</Text>
+      <TextInput
+        style={styles.input}
+        value={quantity}
+        onChangeText={setQuantity}
+        keyboardType="numeric"
+      />
 
       <Text style={styles.label}>Date given (YYYY-MM-DD)</Text>
       <TextInput
@@ -151,6 +200,5 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 6,
     marginBottom: 6,
-    // padding: 10,
   },
 });

@@ -16,6 +16,7 @@ type Borrowing = {
   id: number;
   to_user: string;
   item_name: string;
+  quantity: number;
   date_given: string;
   date_due: string;
   returned: boolean;
@@ -33,7 +34,9 @@ export default function LentScreen() {
 
     const { data, error } = await supabase
       .from("borrowings")
-      .select("id, to_user, item_name, date_given, date_due, returned")
+      .select(
+        "id, to_user, item_name, quantity, date_given, date_due, returned"
+      )
       .eq("from_user", user?.email)
       .eq("returned", false)
       .order("date_given", { ascending: false });
@@ -60,18 +63,56 @@ export default function LentScreen() {
     setRefreshing(false);
   };
 
-  const markAsReturned = async (id: number) => {
-    const { error } = await supabase
+  const markAsReturned = async (
+    id: number,
+    item_name: string,
+    quantity: number
+  ) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { error: borrowingError } = await supabase
       .from("borrowings")
       .update({ returned: true })
       .eq("id", id);
 
-    if (error) {
-      console.error("Update error:", error);
-      Alert.alert("Error", error.message);
-    } else {
-      setBorrowings((prev) => prev.filter((b) => b.id !== id));
+    if (borrowingError) {
+      console.error("Error updating borrowing:", borrowingError);
+      Alert.alert("Error", borrowingError.message);
+      return;
     }
+
+    const { data: inventoryData, error: fetchError } = await supabase
+      .from("inventory")
+      .select("id, quantity")
+      .eq("owner_email", user?.email)
+      .eq("item_name", item_name)
+      .single();
+
+    if (fetchError || !inventoryData) {
+      console.error("Error fetching inventory:", fetchError);
+      Alert.alert("Error fetching inventory", fetchError?.message);
+      return;
+    }
+
+    const newQuantity = inventoryData.quantity + quantity;
+
+    const { error: updateError } = await supabase
+      .from("inventory")
+      .update({
+        quantity: newQuantity,
+        available: newQuantity > 0,
+      })
+      .eq("id", inventoryData.id);
+
+    if (updateError) {
+      console.error("Error updating inventory:", updateError);
+      Alert.alert("Error updating inventory", updateError.message);
+      return;
+    }
+
+    setBorrowings((prev) => prev.filter((b) => b.id !== id));
   };
 
   if (loading) {
@@ -102,12 +143,15 @@ export default function LentScreen() {
         <View style={styles.card}>
           <Text style={styles.text}>
             You lent <Text style={styles.bold}>{item.item_name}</Text> to{" "}
-            <Text style={styles.bold}>{item.to_user}</Text> on {item.date_given}{" "}
-            due {item.date_due}
+            <Text style={styles.bold}>{item.to_user}</Text> in the quantity of{" "}
+            <Text style={styles.bold}>{item.quantity}</Text> on{" "}
+            {item.date_given} due {item.date_due}
           </Text>
           <Button
             title="Mark as returned"
-            onPress={() => markAsReturned(item.id)}
+            onPress={() =>
+              markAsReturned(item.id, item.item_name, item.quantity)
+            }
           />
         </View>
       )}

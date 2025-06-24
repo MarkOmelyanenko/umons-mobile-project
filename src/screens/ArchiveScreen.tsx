@@ -17,6 +17,7 @@ type Borrowing = {
   from_user: string;
   to_user: string;
   item_name: string;
+  quantity: number;
   date_given: string;
   date_due?: string;
   returned: boolean;

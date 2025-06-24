@@ -10,10 +10,12 @@ import {
 } from "react-native";
 import { supabase } from "../supabase";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 type InventoryItem = {
   id: number;
   item_name: string;
+  quantity: number;
   available: boolean;
 };
 
@@ -21,6 +23,7 @@ export default function InventoryScreen() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newItemName, setNewItemName] = useState("");
+  const [newItemQuantity, setNewItemQuantity] = useState("1");
 
   const fetchInventory = async () => {
     const {
@@ -31,34 +34,74 @@ export default function InventoryScreen() {
       .from("inventory")
       .select("*")
       .eq("owner_email", user?.email);
-    // .eq("available", true);
 
     if (!error && data) {
       setItems(data);
     }
   };
 
-  useEffect(() => {
-    fetchInventory();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchInventory();
+    }, [])
+  );
 
   const addItem = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!newItemName.trim()) return;
+    if (!newItemName.trim() || !newItemQuantity.trim()) return;
 
-    const { error } = await supabase.from("inventory").insert({
-      item_name: newItemName.trim(),
-      owner_email: user?.email,
-    });
+    const quantityToAdd = parseInt(newItemQuantity);
+    if (isNaN(quantityToAdd) || quantityToAdd < 1) return;
 
-    if (!error) {
-      setNewItemName("");
-      setModalVisible(false);
-      fetchInventory();
+    const trimmedName = newItemName.trim();
+
+    const { data: existingItems, error: fetchError } = await supabase
+      .from("inventory")
+      .select("id, quantity")
+      .eq("owner_email", user?.email)
+      .eq("item_name", trimmedName)
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      console.error("Fetch error:", fetchError.message);
+      return;
     }
+
+    if (existingItems) {
+      const newQuantity = existingItems.quantity + quantityToAdd;
+      const { error: updateError } = await supabase
+        .from("inventory")
+        .update({
+          quantity: newQuantity,
+          available: newQuantity > 0,
+        })
+        .eq("id", existingItems.id);
+
+      if (updateError) {
+        console.error("Update error:", updateError.message);
+        return;
+      }
+    } else {
+      const { error: insertError } = await supabase.from("inventory").insert({
+        item_name: trimmedName,
+        owner_email: user?.email,
+        quantity: quantityToAdd,
+        available: quantityToAdd > 0,
+      });
+
+      if (insertError) {
+        console.error("Insert error:", insertError.message);
+        return;
+      }
+    }
+
+    setNewItemName("");
+    setNewItemQuantity("1");
+    setModalVisible(false);
+    fetchInventory();
   };
 
   return (
@@ -74,7 +117,9 @@ export default function InventoryScreen() {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <View style={[styles.card, !item.available && styles.unavailable]}>
-              <Text style={styles.name}>{item.item_name}</Text>
+              <Text style={styles.name}>
+                {item.item_name} (x{item.quantity})
+              </Text>
               <Text style={styles.status}>
                 {item.available ? "Available" : "Not available"}
               </Text>
@@ -104,6 +149,13 @@ export default function InventoryScreen() {
               value={newItemName}
               onChangeText={setNewItemName}
               style={styles.input}
+            />
+            <TextInput
+              placeholder="Quantity"
+              value={newItemQuantity}
+              onChangeText={setNewItemQuantity}
+              style={styles.input}
+              keyboardType="numeric"
             />
             <TouchableOpacity style={styles.saveButton} onPress={addItem}>
               <Text style={styles.saveText}>Save</Text>
