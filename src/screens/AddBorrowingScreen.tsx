@@ -11,6 +11,7 @@ import {
 import { supabase } from "../supabase";
 import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function AddBorrowingScreen() {
   const navigation = useNavigation();
@@ -95,7 +96,7 @@ export default function AddBorrowingScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAwareScrollView contentContainerStyle={styles.container}>
       <Text style={styles.label}>To (user email)</Text>
       <TextInput style={styles.input} value={toUser} onChangeText={setToUser} />
 
@@ -131,12 +132,12 @@ export default function AddBorrowingScreen() {
       />
 
       <Button title="Add Borrowing" onPress={handleSubmit} />
-    </View>
+    </KeyboardAwareScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: { padding: 20, flex: 1 },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 6,
-    marginBottom: 12,
-    padding: 10,
+    marginBottom: 6,
+    // padding: 10,
   },
 });

@@ -30,8 +30,8 @@ export default function InventoryScreen() {
     const { data, error } = await supabase
       .from("inventory")
       .select("*")
-      .eq("owner_email", user?.email)
-      .eq("available", true);
+      .eq("owner_email", user?.email);
+    // .eq("available", true);
 
     if (!error && data) {
       setItems(data);
@@ -63,21 +63,26 @@ export default function InventoryScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <View style={[styles.card, !item.available && styles.unavailable]}>
-            <Text style={styles.name}>{item.item_name}</Text>
-            <Text style={styles.status}>
-              {item.available ? "Available" : "Not available"}
-            </Text>
-          </View>
-        )}
-      />
+      {items.length === 0 ? (
+        <View style={styles.center}>
+          <Text>No items in inventory</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <View style={[styles.card, !item.available && styles.unavailable]}>
+              <Text style={styles.name}>{item.item_name}</Text>
+              <Text style={styles.status}>
+                {item.available ? "Available" : "Not available"}
+              </Text>
+            </View>
+          )}
+        />
+      )}
 
-      {/* ➕ Floating Button */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => setModalVisible(true)}
@@ -85,7 +90,6 @@ export default function InventoryScreen() {
         <Ionicons name="add" size={32} color="#fff" />
       </TouchableOpacity>
 
-      {/* ➕ Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -112,6 +116,7 @@ export default function InventoryScreen() {
 }
 
 const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   list: { padding: 16 },
   card: {
     padding: 14,

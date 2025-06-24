@@ -116,10 +116,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardLent: {
-    backgroundColor: "#e0f7fa", // синій відтінок
+    backgroundColor: "#e0f7fa",
   },
   cardBorrowed: {
-    backgroundColor: "#fce4ec", // червоний/рожевий відтінок
+    backgroundColor: "#fce4ec",
   },
   text: { fontSize: 16 },
   bold: { fontWeight: "bold" },

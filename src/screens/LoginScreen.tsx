@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, Alert, StyleSheet } from "react-native";
 import { supabase } from "../supabase";
-import { supabaseAdmin } from "../supabaseAdmin";
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
@@ -14,14 +13,45 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
 
-    const { error } = isSigningUp
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password });
+    if (isSigningUp) {
+      const { data, error } = await supabase.auth.signUp({ email, password });
 
-    if (error) {
-      Alert.alert("Authentication error", error.message);
+      if (error) {
+        Alert.alert("Sign Up Error", error.message);
+        return;
+      }
+
+      const userId = data.user?.id;
+      if (!userId) {
+        Alert.alert("Error", "User ID not returned");
+        return;
+      }
+
+      // Insert user into 'users' table
+      const { error: insertError } = await supabase
+        .from("users")
+        .insert([{ id: userId, email: email.trim(), is_admin: false }]);
+
+      if (insertError) {
+        Alert.alert(
+          "Error",
+          "User created but failed to save in users table:\n" +
+            insertError.message
+        );
+        return;
+      }
     } else {
-      navigation.replace("AppTabs"); // go to tabs after login
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        Alert.alert("Log In Error", error.message);
+        return;
+      }
+
+      navigation.replace("AppTabs");
     }
   };
 

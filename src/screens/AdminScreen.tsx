@@ -51,6 +51,7 @@ export default function AdminScreen() {
       await supabaseAdmin.auth.admin.createUser({
         email: newEmail.trim(),
         password: newPassword,
+        email_confirm: true,
       });
 
     if (createError || !createdUser.user) {
