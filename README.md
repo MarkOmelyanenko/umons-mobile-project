@@ -23,31 +23,6 @@ To start the Expo development server, run:
 ```bash
 npm start
 ```
-
-This opens the Expo developer tools in your browser. From there you can:
-
-- Press **`a`** to run the app on an Android emulator or connected device.
-- Press **`i`** to run on an iOS simulator (macOS only).
-- Press **`w`** to run the web version in your browser.
-
-Alternatively, you can use npm scripts directly:
-
-```bash
-npm run android   # start on Android
-npm run ios       # start on iOS
-npm run web       # start in the browser
-```
-
 ## Configuration
 
 The Supabase credentials used by the app are defined in `src/supabase.ts` and `src/supabaseAdmin.ts`. If you have your own Supabase project, update these files with your keys and project URL.
-
-## Project structure
-
-- `App.tsx` – entry point that switches between authentication and the main navigator
-- `src/` – contains screens, navigation setup and Supabase helpers
-- `assets/` – application icons and splash images
-
-## Building
-
-For a production build, follow the [Expo documentation](https://docs.expo.dev/distribution/introduction/) to generate native binaries for Android and iOS.
