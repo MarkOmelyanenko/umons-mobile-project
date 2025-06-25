@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { supabase } from "../supabase";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,8 +25,10 @@ export default function InventoryScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [newItemQuantity, setNewItemQuantity] = useState("1");
+  const [loading, setLoading] = useState(true);
 
   const fetchInventory = async () => {
+    setLoading(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -38,6 +41,8 @@ export default function InventoryScreen() {
     if (!error && data) {
       setItems(data);
     }
+
+    setLoading(false);
   };
 
   useFocusEffect(
@@ -106,7 +111,11 @@ export default function InventoryScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      {items.length === 0 ? (
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      ) : items.length === 0 ? (
         <View style={styles.center}>
           <Text>No items in inventory</Text>
         </View>
